@@ -10,5 +10,5 @@
     "python.linting.pycodestyleEnabled": false,
     "editor.formatOnSave": true,
     "python.languageServer": "Pylance",
-    "python.analysis.typeCheckingMode": "strict"
+    "python.analysis.typeCheckingMode": "basic"
 }
