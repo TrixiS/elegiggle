@@ -5,6 +5,7 @@ from . import sprite_groups, constants, sprites, levels
 
 # TODO!: create menu
 # TODO!: create ico
+# TODO: star boss
 
 pygame.init()
 screen = pygame.display.set_mode((1200, 800))
@@ -23,7 +24,21 @@ level = levels.FirstLevel(x_tiles, y_tiles)
 level_sprites = level.create()
 
 player = sprites.Player()
-player.rect.move_ip(level.start_point[0] * constants.TILE_SIZE, level.start_point[1] * constants.TILE_SIZE)
+player.rect.move_ip(*level.start_point())
+level.player = player
+
+brick = sprites.GroundTile(level)
+brick.rect.move_ip(200, height - 300)
+brick.speed.y = 2
+
+brick2 = sprites.GroundTile(level)
+brick2.rect.move_ip(width - 200, height - 600)
+brick2.speed.y = 2
+
+brick3 = sprites.GroundTile(level)
+brick3.rect.move_ip(400, height - 300)
+brick3.speed.y = 2
+
 
 while True:
     for event in pygame.event.get():
@@ -41,7 +56,7 @@ while True:
     sprite_groups.WALLS.update()
 
     sprite_groups.CHARACTERS.draw(screen)
-    sprite_groups.CHARACTERS.update()
+    sprite_groups.CHARACTERS.update(level)
 
     clock.tick(60)
     pygame.display.flip()

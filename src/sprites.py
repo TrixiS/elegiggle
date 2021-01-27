@@ -2,6 +2,7 @@ import pygame
 import itertools
 
 from . import sprite_groups, constants, utils
+from . import levels
 
 
 class Border(pygame.sprite.Sprite):
@@ -51,7 +52,7 @@ class Animation:
 class GameObject(pygame.sprite.Sprite):
 
     additional_groups = []
-    mass = 0
+    MASS = 0
 
     __object_id = 0
 
@@ -63,21 +64,33 @@ class GameObject(pygame.sprite.Sprite):
         self.base_image = utils.load_image(kwargs.get("image", f"{self.__class__.__name__.lower()}.png"))
         self.image = self.base_image.copy()
         self.rect = self.image.get_rect()
+        self.mass = self.MASS
+
+    @property
+    def level(self):
+        for group in self.groups():
+            if isinstance(group, levels.Level):
+                return group
 
     @property
     def solid(self):
-        return sprite_groups.SOLID in self.groups()
+        return self in sprite_groups.SOLID
+
+    def _gravity(self, v):
+        return (v ** 2) * 0.5
 
     def collide_up(self, sprites):
         if sprites:
-            self.speed.y = self.mass
+            self.speed.y = self._gravity(self.mass)
+        else:
+            self.speed.y = 0
 
     def collide_down(self, sprites):
         if sprites:
             self.speed.y = 0
         else:
             if self.speed.y == 0:
-                self.speed.y = self.mass
+                self.speed.y = self._gravity(self.mass)
 
     def collide_left(self, sprites):
         pass
@@ -86,6 +99,9 @@ class GameObject(pygame.sprite.Sprite):
         pass
 
     def update(self, *args, **kwargs):
+        if self.speed.y == 0:
+            self.speed.y = self._gravity(self.mass)
+
         collided_left = []
         collided_right = []
         collided_up = []
@@ -93,6 +109,9 @@ class GameObject(pygame.sprite.Sprite):
 
         self.rect = self.rect.move(self.speed.x, 0)
         for sprite in pygame.sprite.spritecollide(self, sprite_groups.SOLID, False):
+            if sprite == self:
+                continue
+
             if self.speed.x > 0:
                 self.rect.right = sprite.rect.left
                 collided_right.append(sprite)
@@ -102,6 +121,9 @@ class GameObject(pygame.sprite.Sprite):
 
         self.rect = self.rect.move(0, self.speed.y)
         for sprite in pygame.sprite.spritecollide(self, sprite_groups.SOLID, False):
+            if sprite == self:
+                continue
+
             if self.speed.y > 0:
                 self.rect.bottom = sprite.rect.top
                 collided_down.append(sprite)
@@ -109,10 +131,17 @@ class GameObject(pygame.sprite.Sprite):
                 self.rect.top = sprite.rect.bottom
                 collided_up.append(sprite)
 
-        self.collide_left(collided_left)
-        self.collide_right(collided_right)
-        self.collide_down(collided_down)
-        self.collide_up(collided_up)
+        if collided_left:
+            self.collide_left(collided_left)
+
+        if collided_right:
+            self.collide_right(collided_right)
+
+        if collided_down:
+            self.collide_down(collided_down)
+
+        if collided_up:
+            self.collide_up(collided_up)
 
 
 class BackgroundTile(GameObject):
@@ -122,46 +151,87 @@ class BackgroundTile(GameObject):
 
 class GroundTile(GameObject):
 
+    MASS = 5
     additional_groups = [sprite_groups.WALLS, sprite_groups.SOLID]
+
+    def collide_right(self, sprites):
+        super().collide_right(sprites)
+
+        if self.level.player in sprites and self.mass:
+            self.speed.x = -2
+
+    def collide_left(self, sprites):
+        super().collide_left(sprites)
+
+        if self.level.player in sprites and self.mass:
+            self.speed.x = 2
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        self.speed.x = 0
 
 
 class Character(GameObject):
 
-    additional_groups = [sprite_groups.SOLID]
+    additional_groups = [sprite_groups.SOLID, sprite_groups.CHARACTERS]
 
-    jump_speed = 0
-    jump_tiles = 0
-    walk_speed = 0
+    JUMP_SPEED = 0
+    JUMP_TILES = 0
+    WALK_SPEED = 0
 
     def __init__(self, *args, **kwargs):
         kwargs["image"] = f"{self.__class__.__name__.lower()}/{self.__class__.__name__.lower()}.png"
         super().__init__(*args, **kwargs)
         self.is_jumping = False
+        self.x_direction = True
         self.jump_pos = None
+        self.jump_speed = self.JUMP_SPEED
+        self.jump_tiles = self.JUMP_TILES
+        self.walk_speed = self.WALK_SPEED
         self.health = 100
         self.walk_animat = Animation.from_dir(
             utils.ASSETS_PATH / f"sprites/{self.__class__.__name__.lower()}/walk", 2)
         self.idle_animat = Animation.from_dir(
             utils.ASSETS_PATH / f"sprites/{self.__class__.__name__.lower()}/idle", 2)
-        self.x_direction = True
 
     def jump(self):
         self.is_jumping = True
-        self.speed.y = (self.jump_speed ** 2) * 0.5 * -1
+        self.speed.y = self._gravity(self.jump_speed) * -1
         self.jump_pos = self.rect.copy()
 
     def collide_down(self, sprites):
         super().collide_down(sprites)
 
+        for sprite in sprites:
+            sprite.collide_up([self])
+
         if sprites:
             self.is_jumping = False
+
+    def collide_up(self, sprites):
+        super().collide_up(sprites)
+
+        for sprite in sprites:
+            sprite.collide_down([self])
+
+    def collide_right(self, sprites):
+        super().collide_right(sprites)
+
+        for sprite in sprites:
+            sprite.collide_left([self])
+
+    def collide_left(self, sprites):
+        super().collide_left(sprites)
+
+        for sprite in sprites:
+            sprite.collide_right([self])
 
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
 
         if (self.is_jumping and
                 self.jump_pos.y - self.rect.y >= self.jump_tiles * constants.TILE_SIZE):
-            self.speed.y = (self.jump_speed ** 2) * 0.5
+            self.speed.y = self._gravity(self.jump_speed)
 
         if self.speed.x > 0:
             self.image = self.walk_animat.frame
@@ -176,24 +246,28 @@ class Character(GameObject):
 
 class Player(Character):
 
-    additional_groups = [sprite_groups.CHARACTERS]
-    mass = 5
-
-    jump_speed = 5
-    jump_tiles = 5
-    walk_speed = 5
+    MASS = 5
+    JUMP_SPEED = 5
+    JUMP_TILES = 5
+    WALK_SPEED = 5
 
     def on_keyboard(self, event):
-        if (event.key == pygame.K_SPACE and event.type == pygame.KEYUP and not self.is_jumping):
+        if event.key == pygame.K_SPACE and event.type == pygame.KEYUP and not self.is_jumping and self.speed.y == 0:
             self.jump()
 
         if event.key == pygame.K_d:
             if event.type == pygame.KEYDOWN:
-                self.speed.x += self.walk_speed
-            else:
-                self.speed.x -= self.walk_speed
+                self.speed.x = self.walk_speed
+            elif event.type == pygame.KEYUP and self.speed.x > 0:
+                self.speed.x = 0
         elif event.key == pygame.K_a:
             if event.type == pygame.KEYDOWN:
-                self.speed.x -= self.walk_speed
-            else:
-                self.speed.x += self.walk_speed
+                self.speed.x = -self.walk_speed
+            elif event.type == pygame.KEYUP and self.speed.x < 0:
+                self.speed.x = 0
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+
+        if pygame.sprite.spritecollideany(self, sprite_groups.X_BORDERS):
+            self.speed.x = 0

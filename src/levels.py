@@ -9,7 +9,8 @@ class Level(pygame.sprite.Group):
         super().__init__()
         self.x_tiles = x_tiles
         self.y_tiles = y_tiles
-        self.start_point = (0, 0)
+        self.start_tile = (0, 0)
+        self.player = None
 
     def schema(self):
         raise NotImplementedError()
@@ -25,19 +26,22 @@ class FirstLevel(Level):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.start_point = (1, self.y_tiles - 2)
+        self.start_tile = (1, self.y_tiles - 2)
+
+    def start_point(self):
+        return (self.start_tile[0] * constants.TILE_SIZE, self.start_tile[1] * constants.TILE_SIZE)
 
     def schema(self):
         schema = [
             [sprites.GroundTile] * (self.x_tiles // 2) + [sprites.BackgroundTile] * (self.x_tiles // 2),
 
             *([sprites.BackgroundTile] * self.x_tiles
-              for _ in range(4)),
+              for _ in range(5)),
 
             [sprites.BackgroundTile] * (self.x_tiles // 2) + [sprites.GroundTile] * (self.x_tiles // 2),
 
             *([sprites.BackgroundTile] * self.x_tiles
-              for _ in range(4)),
+              for _ in range(5)),
 
             [sprites.GroundTile] * self.x_tiles
         ]
@@ -63,7 +67,9 @@ class FirstLevel(Level):
 
         for x in range(self.x_tiles):
             for y in range(self.y_tiles):
-                sprites[y][x].rect.move_ip(x * constants.TILE_SIZE, y * constants.TILE_SIZE)
+                sprite = sprites[y][x]
+                sprite.mass = 0
+                sprite.rect.move_ip(x * constants.TILE_SIZE, y * constants.TILE_SIZE)
 
         return sprites
 
