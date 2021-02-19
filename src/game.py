@@ -1,6 +1,5 @@
 import sys
 import pygame
-import pygame_gui
 
 from . import game_objects, sprite_groups, constants
 from .game_menu import GameMenu
@@ -29,7 +28,7 @@ class Game:
         self.width, self.height = screen.get_size()
         self.x_tiles = self.width // constants.TILE_SIZE
         self.y_tiles = self.height // constants.TILE_SIZE
-        self.menu = GameMenu((self.width, self.height))
+        self.menu = GameMenu(self)
         self.is_paused = True
         self.current_level = None
         self.clock = pygame.time.Clock()
@@ -85,17 +84,6 @@ class Game:
                     self.toggle_pause()
 
                 if self.is_paused:
-                    if event.type == pygame.USEREVENT:
-                        if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                            if event.ui_element == self.menu.exit_button:
-                                self.exit_game()
-                            elif event.ui_element == self.menu.reset_level_button:
-                                if self.current_level is not None:
-                                    self.start_level()
-                                    self.is_paused = False
-                            elif event.ui_element == self.menu.next_level_button:
-                                self.next_level()
-
                     self.menu.process_events(event)
                 else:
                     if event.type in (pygame.KEYUP, pygame.KEYDOWN):
