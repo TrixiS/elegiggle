@@ -1,5 +1,7 @@
 import pygame
+
 from pathlib import Path
+from . import constants
 
 ASSETS_PATH = Path(__file__).parent / "../assets"
 
@@ -17,3 +19,7 @@ def find(predicate, seq):
     for item in seq:
         if predicate(seq):
             return item
+
+
+def tile_point(x, y):
+    return [x * constants.TILE_SIZE, y * constants.TILE_SIZE]
