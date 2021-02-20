@@ -384,11 +384,11 @@ class Player(Character):
 
     def draw_health_bar(self, screen):
         if self.health >= 70:
-            bar_color = (47, 87, 47, 150)
+            bar_color = constants.GREEN_COLOR
         elif self.health >= 40:
-            bar_color = (100, 70, 28, 150)
+            bar_color = constants.ORANGE_COLOR
         else:
-            bar_color = (100, 41, 38, 150)
+            bar_color = constants.RED_COLOR
 
         pygame.draw.rect(
             screen, bar_color,
@@ -543,6 +543,10 @@ class StarBoss(Character):
 
     ADDITIONAL_GROUPS = [sprite_groups.CHARACTERS]
 
+    def kill(self):
+        self.level.finish()
+        super().kill()
+
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
 
@@ -552,10 +556,6 @@ class StarBoss(Character):
             self.idle_animat.frame_delay = 3
         else:
             self.idle_animat.frame_delay = 2
-
-    def kill(self):
-        self.level.finish()
-        super().kill()
 
 
 class StarStone(GameObject):

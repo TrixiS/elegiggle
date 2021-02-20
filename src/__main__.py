@@ -6,6 +6,7 @@ from .game import Game
 # TODO!: create menu
 # TODO!: create ico
 # TODO: star boss
+# TODO: remove cursor
 
 pygame.init()
 pygame.font.init()

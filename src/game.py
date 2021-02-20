@@ -5,7 +5,7 @@ from . import game_objects, sprite_groups, constants
 from .game_menu import GameMenu
 
 
-class NextList(list):
+class CycledList(list):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,19 +17,20 @@ class NextList(list):
             self.current_next_index += 1
             return element
         except IndexError:
-            self.current_next_index = 0
+            self.current_next_index = 1
+            return self[0]
 
 
 class Game:
 
     def __init__(self, screen):
-        self.levels = NextList()
+        self.levels = CycledList()
         self.screen = screen
         self.width, self.height = screen.get_size()
         self.x_tiles = self.width // constants.TILE_SIZE
         self.y_tiles = self.height // constants.TILE_SIZE
         self.menu = GameMenu(self)
-        self.is_paused = True
+        self.is_paused = False
         self.current_level = None
         self.clock = pygame.time.Clock()
         self.player = None
@@ -69,6 +70,8 @@ class Game:
         sys.exit()
 
     def start_game(self):
+        self.next_level()
+
         while True:
             time_delta = self.clock.tick(constants.GAME_FPS) / 1000
             keys = pygame.key.get_pressed()
@@ -77,17 +80,15 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.exit_game()
 
+                # TODO: remove esc key to show the level
+                #       add "Return" button to do so
                 if event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE:
-                    if self.current_level is None:
-                        self.next_level()
-
                     self.toggle_pause()
 
                 if self.is_paused:
                     self.menu.process_events(event)
-                else:
-                    if event.type in (pygame.KEYUP, pygame.KEYDOWN):
-                        self.player.on_keyboard(event=event)
+                elif event.type in (pygame.KEYUP, pygame.KEYDOWN):
+                    self.player.on_keyboard(event=event)
 
             if self.is_paused:
                 self.menu.update(time_delta)
