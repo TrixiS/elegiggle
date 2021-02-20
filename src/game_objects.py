@@ -182,6 +182,16 @@ class BackgroundBrick(GameObject):
     pass
 
 
+class GroundTile(GameObject):
+
+    ADDITIONAL_GROUPS = [sprite_groups.SOLID]
+
+
+class Brick(GameObject):
+
+    ADDITIONAL_GROUPS = [sprite_groups.SOLID]
+
+
 class LevelPointer(GameObject):
 
     ADDITIONAL_GROUPS = [sprite_groups.SOLID]
@@ -192,11 +202,6 @@ class LevelPointer(GameObject):
 
         if self.level.player in sprites:
             self.level.game.next_level()
-
-
-class Brick(GameObject):
-
-    ADDITIONAL_GROUPS = [sprite_groups.SOLID]
 
 
 class Box(GameObject):
@@ -219,11 +224,6 @@ class Box(GameObject):
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
         self.speed.x = 0
-
-
-class GroundTile(GameObject):
-
-    ADDITIONAL_GROUPS = [sprite_groups.SOLID]
 
 
 class Character(GameObject):

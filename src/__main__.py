@@ -1,15 +1,12 @@
 import pygame
 
-from . import levels
+from . import levels, constants, utils
 from .game import Game
-
-# TODO!: create menu
-# TODO!: create ico
-# TODO: star boss
-# TODO: remove cursor
 
 pygame.init()
 pygame.font.init()
+pygame.display.set_caption(constants.WINDOW_TITLE)
+pygame.display.set_icon(utils.load_image("../icon.png"))
 screen = pygame.display.set_mode((1200, 800))
 
 game = Game(screen)

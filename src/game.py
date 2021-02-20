@@ -65,6 +65,7 @@ class Game:
 
     def toggle_pause(self):
         self.is_paused = not self.is_paused
+        pygame.mouse.set_visible(self.is_paused)
 
     def exit_game(self):
         sys.exit()
@@ -80,8 +81,6 @@ class Game:
                 if event.type == pygame.QUIT:
                     self.exit_game()
 
-                # TODO: remove esc key to show the level
-                #       add "Return" button to do so
                 if event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE:
                     self.toggle_pause()
 
